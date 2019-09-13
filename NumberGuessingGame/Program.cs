@@ -5,59 +5,96 @@ namespace NumberGuessingGame
 {
     class Program
     {
-        static GuessedNumber currentGuess_aboveRandom = null;
-        static GuessedNumber currentGuess_belowRandom = null;
+        static GuessedNumber currentGuess_aboveRandom;
+        static GuessedNumber currentGuess_belowRandom;
         static void Main(string[] args)
         {
-            System.Console.WriteLine("Let's play a number guessing game. The higher your score, the worse you did!");
-            int maxValue = GetUserInput("What should be the maximum number in the random range?");
-            int randomValue = new Random().Next(1, maxValue + 1);
-            int guessedNumber = -1;
-            int numberOfGuesses = 0;
-            do
+            currentGuess_aboveRandom = null;
+            currentGuess_belowRandom = null;
+            string firstUserInput = GetUserInput("Would you like to play a game? (y/n/m)", 1);
+            bool userWantsToPlay = false;
+            switch (firstUserInput)
             {
-                Console.Beep();
-                Console.Clear();
-                System.Console.WriteLine(" -- You are guessing in the range 1-" + maxValue + " --");
-                //string tipGiven = ""; // shorthand, for displaying
-                //string incorrectMessage = "Incorrectly!";
-                /*if (numberOfGuesses > 0)
+                case "y":
+                    userWantsToPlay = true;
+                    break;
+                case "n":
+                    System.Console.WriteLine("Why are you even here?");
+                    return;
+                case "m":
+                    System.Console.WriteLine("You wont get anywhere in life with that amount of indecisiveness...");
+                    Main(new string[] { "" });
+                    return;
+                default:
+                    Main(new string[] { "" });
+                    return;
+            }
+            if (userWantsToPlay)
+            {
+                System.Console.WriteLine("Let's play a number guessing game. The higher your score, the worse you did!");
+                int minValue = GetUserInput("What should the low end of the range be?");
+                int maxValue = GetUserInput("What should the maximum number in the range be?");
+                int maxGuesses = GetUserInput("How many guesses should be allowed? (put 0 for infinite guesses)");
+                int randomValue = new Random().Next(minValue, maxValue + 1);
+                int guessedNumber = -1;
+                int numberOfGuesses = 0;
+                bool exceededGuessLimit = false;
+                do
                 {
-                    if (guessedNumber > randomValue)
+                    Console.Beep();
+                    Console.Clear();
+                    System.Console.WriteLine(" -- You are guessing in the range " + minValue + "-" + maxValue + " --");
+                    if (maxGuesses != 0)
                     {
-                        incorrectMessage += " Try going lower...";
-                        tipGiven = "(low)";
+                        System.Console.WriteLine("You have used " + numberOfGuesses + "/" + maxGuesses + " guesses");
                     }
                     else
                     {
-                        incorrectMessage += " Try going higher...";
-                        tipGiven = "(high)";
+                        System.Console.WriteLine("You have guessed " + numberOfGuesses + " times");
                     }
-                    //System.Console.WriteLine(incorrectMessage);
-                }*/
-                if (numberOfGuesses > 0)
-                {
-                    //System.Console.WriteLine("You have guessed: " + incorrectMessage);
-                    //System.Console.WriteLine();
-                    //PrintPreviousGuesses(allGuesses);
+                    string result = "";
+                    result += "Number is contained between: " + (currentGuess_belowRandom != null ? currentGuess_belowRandom.ToString() : minValue.ToString()) + " => { ?? } <= ";
+                    result += (currentGuess_aboveRandom != null ? currentGuess_aboveRandom.ToString() : maxValue.ToString());
+                    System.Console.WriteLine(numberOfGuesses == 0 ? "No guesses yet" : result);
+                    guessedNumber = GetUserInput("Guess a number: ");
+                    numberOfGuesses++;
+                    NewGuess(new GuessedNumber(guessedNumber, randomValue));
+                    if (maxGuesses != 0 && numberOfGuesses >= maxGuesses)
+                    {
+                        exceededGuessLimit = true;
+                    }
                 }
-                string result = "";
-                if (currentGuess_belowRandom != null)
+                while (guessedNumber != randomValue && !exceededGuessLimit);
+                Console.Clear();
+                if (maxGuesses != 0 && !exceededGuessLimit)
                 {
-                    result += "Number is conta\nined between: " + currentGuess_belowRandom.ToString() + " => { } <= ";
+                    System.Console.WriteLine($"Correct! It took you {numberOfGuesses}/{maxGuesses} guesses to guess "
+                        + randomValue
+                        + " in the range of "
+                        + minValue + "-" + maxValue);
                 }
-                if (currentGuess_aboveRandom != null)
+                else if (maxGuesses != 0 && exceededGuessLimit)
                 {
-                    result += currentGuess_aboveRandom;
+                    System.Console.WriteLine($"You have failed miserably to guess {randomValue} on the range {minValue}/{maxValue} with {maxGuesses} amount of tries.");
+                    string response = GetUserInput("Would you like to try again? (y/n)", 1);
+                    if (response == "y")
+                    {
+                        Main(new string[] { "" });
+                        return;
+                    }
+                    else
+                    {
+                        System.Console.WriteLine("I guess you like being a failure...");
+                    }
                 }
-                System.Console.WriteLine(result == "" ? "No guesses yet" : result);
-                guessedNumber = GetUserInput("Guess a number: ");
-                numberOfGuesses++;
-                NewGuess(new GuessedNumber(guessedNumber, randomValue));
+                else
+                {
+                    System.Console.WriteLine($"Correct! It took you {numberOfGuesses} guesses to guess "
+                        + randomValue
+                        + " in the range of "
+                        + minValue + "-" + maxValue);
+                }
             }
-            while (guessedNumber != randomValue);
-            Console.Clear();
-            System.Console.WriteLine($"Correct! It took you {numberOfGuesses} guesses!");
         }
 
         static int GetUserInput(string question)
@@ -71,6 +108,28 @@ namespace NumberGuessingGame
             }
             while (!success);
             return integerFromUser;
+        }
+
+        static string GetUserInput(string question, int desiredInputLength)
+        {
+            string userResponse = "";
+            bool success;
+            do
+            {
+                Console.WriteLine(question);
+                userResponse = Console.ReadLine();
+                if (userResponse.Length == desiredInputLength)
+                {
+                    success = true;
+                }
+                else
+                {
+                    Console.WriteLine($"Expected a {desiredInputLength} character long response");
+                    success = false;
+                }
+            }
+            while (!success);
+            return userResponse;
         }
 
         static void NewGuess(GuessedNumber guessedNumber)
@@ -126,7 +185,6 @@ namespace NumberGuessingGame
         public override string ToString()
         {
             return actual.ToString();
-            //return (IsLower()) ? actual + " is below" : actual + " is above";
         }
     }
 }
